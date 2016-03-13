@@ -49,44 +49,63 @@ robot.init()
 
 var host = process.env.GAMEPADGO_HOST
 var port = process.env.GAMEPADGO_PORT
-var socket = net.connect(port, host, function() {
-  console.log(`Connected to ${host}:${port}`);
-})
 
-socket.left = []
-socket.on('readable', function() {
-  var chunk = this.read()
-  while (true) {
-    if (!~chunk.indexOf(String.fromCharCode(0))) {
-      break
-    }
-    this.left.push(chunk)
-    var buffer = Buffer.concat(this.left)
-    var end = buffer.indexOf(String.fromCharCode(0))
-    var command = buffer.slice(0, end)
-    this.left = []
-    chunk = buffer.slice(end + 1)
-    if (!command.length) {
-      break
-    }
-    try {
-      var data = JSON.parse(command);
-    } catch (e) {
-      console.log(e.message);
-      console.log(chunk);
-      return
-    }
-    handleGamepad(data)
-    console.log(`handled: ${command}`);
-  }
+function connect() {
+  var socket = net.connect(port, host, function() {
+    console.log(`Connected to ${host}:${port}`);
+  })
 
-  if (chunk.length) {
-    //console.log(`left(${chunk.length}): ${chunk}`);
-    this.left.push(chunk)
-  }
-})
+  socket.left = []
+  socket.on('readable', function() {
+    var chunk = this.read()
+    while (true) {
+      if (!~chunk.indexOf(String.fromCharCode(0))) {
+        break
+      }
+      this.left.push(chunk)
+      var buffer = Buffer.concat(this.left)
+      var end = buffer.indexOf(String.fromCharCode(0))
+      var command = buffer.slice(0, end)
+      this.left = []
+      chunk = buffer.slice(end + 1)
+      if (!command.length) {
+        break
+      }
+      try {
+        var data = JSON.parse(command);
+      } catch (e) {
+        console.log(e.message);
+        console.log(chunk);
+        return
+      }
+      handleGamepad(data)
+      console.log(`handled: ${command}`);
+    }
+
+    if (chunk.length) {
+      //console.log(`left(${chunk.length}): ${chunk}`);
+      this.left.push(chunk)
+    }
+  })
+
+  socket.on('error', console.error)
+  socket.on('close', connect)
+}
+connect()
 
 function handleGamepad(gamepad) {
+  if (Math.abs(_.get(gamepad, 'axes.0')) >= Math.abs(_.get(gamepad, 'axes.1'))) {
+    _.set(gamepad, 'axes.1', 0)
+  } else {
+    _.set(gamepad, 'axes.0', 0)
+  }
+  if (Math.abs(_.get(gamepad, 'axes.0')) < 0.5) {
+    _.set(gamepad, 'axes.0', 0)
+  }
+  if (Math.abs(_.get(gamepad, 'axes.1')) < 0.5) {
+    _.set(gamepad, 'axes.1', 0)
+  }
+
   switch (true) {
     case _.get(gamepad, 'buttons.10.value'):
       robot.reset()
@@ -127,7 +146,8 @@ function handleGamepad(gamepad) {
       var res = robot.motion.right()
       console.log('Turning right::' + res)
     break
-    case _.get(gamepad, 'axes[7]') > 0 :
+    case _.get(gamepad, 'axes.7') > 0 :
+    case _.get(gamepad, 'buttons.0.value') > 0 :
       var res = robot.motion.stop()
       console.log('Stop::' + res)
     break
