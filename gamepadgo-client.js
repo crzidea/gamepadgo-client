@@ -52,7 +52,11 @@ var port = process.env.GAMEPADGO_PORT
 
 function connect() {
   var socket = net.connect(port, host, function() {
+    var ip = socket.address().address
+    console.log(`Local address: ${ip}`);
     console.log(`Connected to ${host}:${port}`);
+    var data = JSON.stringify({type: 'client_ip', body: ip});
+    socket.write(data)
   })
 
   socket.left = []
