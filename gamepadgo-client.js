@@ -109,6 +109,11 @@ function handleGamepad(gamepad) {
   if (Math.abs(_.get(gamepad, 'axes.1')) < 0.5) {
     _.set(gamepad, 'axes.1', 0)
   }
+  //if (_.get(gamepad, 'axes.6') >= _.get(gamepad, 'axes.7')) {
+    //_.set(gamepad, 'axes.7', -1)
+  //} else {
+    //_.set(gamepad, 'axes.6', -1)
+  //}
 
   switch (true) {
     case _.get(gamepad, 'buttons.10.value'):
@@ -151,12 +156,21 @@ function handleGamepad(gamepad) {
       console.log('Turning right::' + res)
     break
     case _.get(gamepad, 'axes.6') > -0.5:
-      var res = robot.motion.decreaseSpeed()
-      console.log('Decreasing speed::' + res)
+      changeSpeed(() => {
+        var res = robot.motion.decreaseSpeed()
+        console.log('Decreasing speed::' + res)
+      })
     break
     case _.get(gamepad, 'axes.7') > -0.5:
-      var res = robot.motion.increaseSpeed()
-      console.log('Increasing speed::' + res)
+      changeSpeed(() => {
+        var res = robot.motion.increaseSpeed()
+        console.log('Increasing speed::' + res)
+      })
+    break
+    case (_.get(gamepad, 'axes.6') < -0.5)
+          && (_.get(gamepad, 'axes.7') < -0.5)
+         || _.get(gamepad, 'buttons.3.value') > 0:
+      changeSpeed()
     break
     case _.get(gamepad, 'buttons.0.value') > 0:
       var res = robot.motion.stop()
@@ -245,4 +259,13 @@ function handleGamepad(gamepad) {
   }
 
   //robot.board.wait(1000)
+}
+
+var speedTimer
+function changeSpeed(howToChange) {
+  clearInterval(speedTimer)
+  if (howToChange) {
+    console.log('Change speed');
+    speedTimer = setInterval(howToChange, 100)
+  }
 }
