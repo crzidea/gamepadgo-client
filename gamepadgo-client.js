@@ -156,15 +156,15 @@ function handleGamepad(gamepad) {
       console.log('Turning right::' + res)
     break
     case _.get(gamepad, 'axes.6') > -0.5:
+      console.log('Decreasing speed:')
       changeSpeed(() => {
         var res = robot.motion.decreaseSpeed()
-        console.log('Decreasing speed::' + res)
       })
     break
     case _.get(gamepad, 'axes.7') > -0.5:
+      console.log('Increasing speed:')
       changeSpeed(() => {
         var res = robot.motion.increaseSpeed()
-        console.log('Increasing speed::' + res)
       })
     break
     case (_.get(gamepad, 'axes.6') < -0.5)
